@@ -134,7 +134,7 @@
 
             <div class="header-controls">
                 <!-- Status do Companion App -->
-                <a href="companion/arena-companion.exe" download id="companion-status-badge" class="companion-status-badge offline" title="Clique para baixar o Companion App Desktop" style="text-decoration: none;">
+                <a href="#" onclick="openDownloadModal(event)" id="companion-status-badge" class="companion-status-badge offline" title="Clique para baixar o Companion App Desktop" style="text-decoration: none;">
                     <span class="status-dot"></span>
                     <span class="status-text">Companion Offline</span>
                 </a>
@@ -463,6 +463,57 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="closePrivacyModal()" data-i18n="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Instruções de Download do Companion -->
+    <div class="modal-backdrop" id="download-modal" style="display: none;">
+        <div class="modal-box modal-large">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-info" style="color: var(--accent-cyan); margin-right: 8px;"></i> Instalação Segura</h3>
+                <button class="btn-close" onclick="closeDownloadModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: left; line-height: 1.6;">
+                <p style="margin-bottom: 1.2rem; color: var(--text-primary); font-weight: 600;">
+                    Por ser um executável (.exe) novo e independente (sem licença paga de assinatura da Microsoft), o Windows SmartScreen e navegadores vão avisar sobre o download. Siga os passos simples:
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; gap: 12px; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 6px; border: 1px solid rgba(0,245,255,0.15);">
+                        <span style="font-family: var(--font-arcade); font-size: 0.8rem; color: var(--accent-cyan); margin-top: 4px;">[1]</span>
+                        <div>
+                            <strong>No Navegador (Chrome/Edge):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Se disser que o arquivo não é seguro, clique nos três pontinhos ao lado dele e selecione <strong>"Manter"</strong> ou <strong>"Manter assim mesmo"</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 6px; border: 1px solid rgba(255,0,127,0.15);">
+                        <span style="font-family: var(--font-arcade); font-size: 0.8rem; color: var(--accent-pink); margin-top: 4px;">[2]</span>
+                        <div>
+                            <strong>Ao Executar no Windows (Tela SmartScreen):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Na tela azul/cinza de aviso, clique no link azul escrito <strong>"Mais informações"</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; background: rgba(57,255,20,0.05); padding: 0.8rem; border-radius: 6px; border: 1px solid rgba(57,255,20,0.2);">
+                        <span style="font-family: var(--font-arcade); font-size: 0.8rem; color: var(--accent-green); margin-top: 4px;">[3]</span>
+                        <div>
+                            <strong>Executar:</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">Clique no botão <strong>"Executar assim mesmo"</strong> que aparecerá no canto inferior direito para abrir o aplicativo.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; text-align: center; background: rgba(138,43,226,0.1); border: 1px solid var(--accent-purple); padding: 0.8rem; border-radius: 6px;">
+                    <p style="font-size: 0.8rem; color: var(--text-secondary);"><i class="fa-solid fa-shield-halved" style="color: var(--accent-green);"></i> O aplicativo é 100% seguro. Ele apenas cria o túnel de rede local necessário para jogar com seus amigos.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDownloadModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmDownloadCompanion()" style="gap: 8px; display:inline-flex; align-items:center;">
+                    <i class="fa-solid fa-file-arrow-down"></i> Entendi, Baixar Agora
+                </button>
             </div>
         </div>
     </div>

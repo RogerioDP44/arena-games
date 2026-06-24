@@ -1854,9 +1854,9 @@ function renderConnectionBox(lobby) {
                     <i class="fa-solid fa-circle-exclamation" style="font-size: 2rem; color: var(--accent-pink); filter: drop-shadow(0 0 5px var(--accent-pink-glow));"></i>
                     <p><strong>Companion App Offline</strong></p>
                     <p style="font-size:0.8rem; margin: 0.5rem 0; line-height:1.4;">Você precisa do aplicativo de desktop para criar a conexão automática.</p>
-                    <a href="companion/arena-companion.exe" download class="btn btn-primary" style="padding: 0.5rem 1rem; font-size:0.8rem; gap: 8px; display:inline-flex; align-items:center;">
+                    <button class="btn btn-primary" onclick="openDownloadModal(event)" style="padding: 0.5rem 1rem; font-size:0.8rem; gap: 8px; display:inline-flex; align-items:center; cursor:pointer; border:none;">
                         <i class="fa-solid fa-file-arrow-down"></i> Baixar arena-companion.exe
-                    </a>
+                    </button>
                 </div>
                 <div class="companion-instruction-step active" style="margin-top: 10px;">
                     <span class="step-number">1</span>
@@ -1926,4 +1926,27 @@ function renderConnectionBox(lobby) {
             </div>
         `;
     }
+}
+
+function openDownloadModal(e) {
+    if (e) e.preventDefault();
+    AudioSynth.playClick();
+    document.getElementById('download-modal').style.display = 'flex';
+}
+
+function closeDownloadModal() {
+    AudioSynth.playClick();
+    document.getElementById('download-modal').style.display = 'none';
+}
+
+function confirmDownloadCompanion() {
+    AudioSynth.playCoin();
+    closeDownloadModal();
+    
+    const link = document.createElement('a');
+    link.href = 'companion/arena-companion.exe';
+    link.download = 'arena-companion.exe';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
