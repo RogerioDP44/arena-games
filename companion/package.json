@@ -1,0 +1,13 @@
+{
+  "name": "arena-games-companion",
+  "version": "1.0.0",
+  "description": "Companion App for Arena Games Retro Matchmaker",
+  "main": "companion.js",
+  "scripts": {
+    "start": "node companion.js",
+    "package": "node --experimental-sea-config sea-config.json"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

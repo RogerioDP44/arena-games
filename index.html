@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena Games - Retro Matchmaker</title>
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://arena-games.sismatic.com.br/">
+    <meta property="og:title" content="Arena Games - Retro Matchmaker">
+    <meta property="og:description" content="Encontre parceiros para jogar clássicos do PC via Direct IP. Counter-Strike, Quake, Doom, Age of Empires e muito mais!">
+    <meta property="og:image" content="https://arena-games.sismatic.com.br/og-preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://arena-games.sismatic.com.br/">
+    <meta property="twitter:title" content="Arena Games - Retro Matchmaker">
+    <meta property="twitter:description" content="Encontre parceiros para jogar clássicos do PC via Direct IP. Counter-Strike, Quake, Doom, Age of Empires e muito mais!">
+    <meta property="twitter:image" content="https://arena-games.sismatic.com.br/og-preview.png">
+
+    <!-- Favicon com Emoji Retrô -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👾</text></svg>">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS Customizado com Cache Buster -->
+    <link rel="stylesheet" href="style.css?v=21">
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Social Bar Ad (carrega globalmente) -->
+    <script src="https://pl29879971.effectivecpmnetwork.com/24/d8/9d/24d89d83fe876d3b8016ddcfef0411ba.js"></script>
+</head>
+<body>
+
+    <!-- Efeitos retro de background e CRT -->
+    <div class="bg-stars"></div>
+    <div class="bg-glow"></div>
+    <div class="bg-grid"></div>
+    <div class="crt-overlay"></div>
+
+    <!-- TELA DE LOGIN / CADASTRO (Modal de autenticação para hóspedes) -->
+    <div id="auth-screen" class="auth-overlay" style="display: none;">
+        <div class="auth-card" style="position: relative;">
+            <button class="btn-close" onclick="closeAuthModal()" style="position: absolute; top: 15px; right: 20px; font-size: 1.5rem;" title="Fechar">&times;</button>
+            <div class="auth-logo">
+                <i class="fa-solid fa-gamepad auth-logo-icon"></i>
+                <h2>ARENA <span class="accent-text">GAMES</span></h2>
+                <p>Retro Matchmaker</p>
+            </div>
+            <!-- Formulário de Login -->
+            <form id="login-form" onsubmit="handleLoginSubmit(event)">
+                <h3 data-i18n="login_title">Entrar na Arena</h3>
+                <div class="form-group">
+                    <label for="login-email">E-mail</label>
+                    <input type="email" id="login-email" placeholder="seu-email@provedor.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" placeholder="Sua senha secreta" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">Entrar</span>
+                </button>
+                <p class="auth-switch">
+                    <span data-i18n="dont_have_account">Não tem uma conta?</span> 
+                    <a href="#" onclick="toggleAuthForms(true)" data-i18n="switch_register">Cadastre-se</a>
+                </p>
+            </form>
+
+            <!-- Formulário de Cadastro -->
+            <form id="register-form" onsubmit="handleRegisterSubmit(event)" style="display: none;">
+                <h3 data-i18n="register_title">Criar Conta</h3>
+                <div class="form-group">
+                    <label for="register-email">E-mail</label>
+                    <input type="email" id="register-email" placeholder="seu-email@provedor.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="register-nickname">Apelido (Nickname)</label>
+                    <input type="text" id="register-nickname" placeholder="Ex: Cachorrão" required minlength="3" maxlength="25">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Senha</label>
+                    <input type="password" id="register-password" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_register">Cadastrar</span>
+                </button>
+                <p class="auth-switch">
+                    <span data-i18n="already_have_account">Já tem uma conta?</span> 
+                    <a href="#" onclick="toggleAuthForms(false)" data-i18n="switch_login">Fazer Login</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO DA APLICAÇÃO (Visível apenas após Login) -->
+    <div id="app-content" style="display: none; flex-direction: column; min-height: 100vh;">
+        <!-- Anúncio Lateral Esquerdo (160x600) -->
+        <div class="ad-side ad-left">
+            <script>
+              atOptions = {
+                'key' : '5b848c63662052b83c919d351ed23326',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/5b848c63662052b83c919d351ed23326/invoke.js"></script>
+        </div>
+        <!-- Anúncio Lateral Direito (160x600) -->
+        <div class="ad-side ad-right">
+            <script>
+              atOptions = {
+                'key' : '5b848c63662052b83c919d351ed23326',
+                'format' : 'iframe',
+                'height' : 600,
+                'width' : 160,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/5b848c63662052b83c919d351ed23326/invoke.js"></script>
+        </div>
+
+        <header class="app-header">
+            <div class="header-logo" onclick="goHome()" style="cursor: pointer;" title="Voltar para o Início / Home">
+                <i class="fa-solid fa-gamepad logo-icon"></i>
+                <h1>ARENA <span class="accent-text">GAMES</span></h1>
+                <span class="version-tag">Retro Matchmaker</span>
+            </div>
+
+            <div class="header-controls">
+                <!-- Status do Companion App -->
+                <div id="companion-status-badge" class="companion-status-badge offline" title="Status do Companion App Desktop">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Companion Offline</span>
+                </div>
+
+                <!-- Seletor de Idioma -->
+                <div class="lang-selector">
+                    <button id="lang-btn-pt" class="lang-btn active" onclick="setLanguage('pt-BR')">
+                        <span class="flag">🇧🇷</span> PT
+                    </button>
+                    <button id="lang-btn-en" class="lang-btn" onclick="setLanguage('en')">
+                        <span class="flag">🇺🇸</span> EN
+                    </button>
+                </div>
+
+                <!-- Controle de Áudio -->
+                <button class="icon-btn" onclick="toggleMute()" id="sound-toggle-btn" title="Mudar som">
+                    <i class="fa-solid fa-volume-high" style="color: var(--accent-cyan);"></i>
+                </button>
+
+                <!-- Informações do Usuário com Foto/Avatar -->
+                <div class="user-profile-badge" id="user-badge">
+                    <img id="user-avatar-img" class="user-avatar-small" src="https://api.dicebear.com/7.x/pixel-art/svg?seed=placeholder" alt="Avatar">
+                    <span id="user-display-name">Jogador</span>
+                    <button class="icon-btn-action" id="edit-profile-btn" onclick="openProfileModal()" title="Editar Perfil">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="icon-btn-action logout-btn" onclick="handleLogout()" title="Sair">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Dashboard Principal -->
+            <section id="dashboard-view" class="view-section">
+                <div class="dashboard-hero">
+                    <h2 data-i18n="hero_title">Encontre parceiros para jogar clássicos por IP</h2>
+                    <p data-i18n="hero_subtitle">Crie salas em tempo real ou junte-se a partidas ativas agora mesmo.</p>
+                </div>
+
+                <!-- Anúncio Topo (728x90) -->
+                <div class="ad-container ad-top">
+                    <script>
+                      atOptions = {
+                        'key' : 'ca2ea939e8e095dbd1411ef76eead0eb',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                      };
+                    </script>
+                    <script src="https://www.highperformanceformat.com/ca2ea939e8e095dbd1411ef76eead0eb/invoke.js"></script>
+                </div>
+
+                <!-- Filtros de Jogos e Busca -->
+                <div class="filter-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Buscar salas ou jogos..." data-i18n-placeholder="search_placeholder">
+                    </div>
+                    <div class="game-filters" id="game-filters-container">
+                        <!-- Gerado dinamicamente no JS -->
+                    </div>
+                </div>
+
+                <!-- Listagem de Salas -->
+                <div class="lobbies-container">
+                    <div class="lobbies-header">
+                        <h3 data-i18n="active_rooms">Salas Ativas</h3>
+                        <button class="btn btn-primary" onclick="openCreateRoomModal()" id="btn-host-room">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="btn_host">Hospedar Sala</span>
+                        </button>
+                    </div>
+
+                    <div class="lobbies-grid" id="lobbies-grid">
+                        <div class="loading-spinner">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            <p data-i18n="loading_rooms">Carregando salas...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Native Banner Ad (entre filtros e grid de salas) -->
+                <div class="ad-container ad-native" style="margin: 0.5rem 0;">
+                    <script async="async" data-cfasync="false" src="https://pl29879968.effectivecpmnetwork.com/a77442377c5663c11d21138d2157cd94/invoke.js"></script>
+                    <div id="container-a77442377c5663c11d21138d2157cd94"></div>
+                </div>
+            </section>
+
+            <!-- Detalhes do Lobby Ativo & Chat -->
+            <section id="lobby-view" class="view-section" style="display: none;">
+                <div class="lobby-grid">
+                    <!-- Painel da Sala -->
+                    <div class="lobby-panel panel-left">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-back" onclick="leaveCurrentLobby()">
+                                <i class="fa-solid fa-arrow-left"></i> <span data-i18n="back_to_list">Voltar para a lista</span>
+                            </button>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" onclick="shareLobby()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; gap: 6px;">
+                                    <i class="fa-solid fa-share-nodes" style="color: var(--accent-cyan);"></i> <span id="share-btn-text" data-i18n="btn_share">Compartilhar Sala</span>
+                                </button>
+                                <button class="btn btn-danger" id="btn-close-lobby" onclick="closeCurrentLobby()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; gap: 6px; display: none; background: var(--accent-pink); color: white; box-shadow: 0 0 10px rgba(255, 0, 127, 0.4);">
+                                    <i class="fa-solid fa-circle-xmark"></i> <span data-i18n="btn_close_lobby">Encerrar Sala</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="lobby-game-banner" id="lobby-game-banner">
+                            <!-- Imagem/Ícone do jogo ativa -->
+                        </div>
+
+                        <div class="lobby-details-card">
+                            <h2 id="lobby-detail-title">Nome da Sala</h2>
+                            <p class="lobby-host-info"><span data-i18n="hosted_by">Hospedado por</span>: <strong id="lobby-detail-host">Host</strong></p>
+                            <p id="lobby-detail-desc" class="lobby-description">Descrição da sala...</p>
+                        </div>
+
+                        <!-- Painel de Conexão Dinâmico (Direct IP ou Companion) -->
+                        <div id="connection-box-container">
+                            <!-- Gerado dinamicamente no app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Chat e Jogadores -->
+                    <div class="lobby-panel panel-right">
+                        <!-- Lista de Jogadores na sala -->
+                        <div class="players-list-container">
+                            <div class="panel-header">
+                                <i class="fa-solid fa-users"></i>
+                                <h4 data-i18n="players_in_lobby">Jogadores na Sala</h4>
+                                <span class="player-count-badge" id="lobby-players-count">1/4</span>
+                            </div>
+                            <div class="players-list" id="lobby-players-list">
+                                <!-- Gerado dinamicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Chat em Tempo Real -->
+                        <div class="chat-container">
+                            <div class="panel-header">
+                                <i class="fa-solid fa-comments"></i>
+                                <h4 data-i18n="lobby_chat">Chat da Sala</h4>
+                            </div>
+                            <div class="chat-messages" id="chat-messages">
+                                <!-- Mensagens em tempo real aparecerão aqui -->
+                            </div>
+                            <form class="chat-input-form" id="chat-form" onsubmit="sendChatMessage(event)">
+                                <input type="text" id="chat-input" placeholder="Digite sua mensagem..." data-i18n-placeholder="chat_placeholder" autocomplete="off" required>
+                                <button type="submit" class="btn btn-primary btn-send">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Anúncio Rodapé (728x90) -->
+        <div class="ad-container ad-bottom">
+            <script>
+              atOptions = {
+                'key' : 'ca2ea939e8e095dbd1411ef76eead0eb',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/ca2ea939e8e095dbd1411ef76eead0eb/invoke.js"></script>
+        </div>
+
+        <footer class="app-footer">
+            <p>&copy; 2026 Arena Games - Retro Matchmaker. <span data-i18n="footer_rights">Todos os direitos reservados. Feito com ❤️ para gamers nostálgicos.</span> | <a href="#" onclick="openPrivacyModal(event)" style="color: var(--accent-cyan); text-decoration: none; border-bottom: 1px dashed var(--accent-cyan); transition: var(--transition-smooth);" data-i18n="footer_privacy">Políticas de Privacidade (LGPD)</a></p>
+        </footer>
+    </div>
+
+    <!-- Modal: Editar Perfil (Apelido e Foto) -->
+    <div class="modal-backdrop" id="profile-modal" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 data-i18n="modal_profile_title">Editar Perfil</h3>
+                <button class="btn-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="avatar-preview-container">
+                    <img id="profile-avatar-preview" src="" class="profile-avatar-large" alt="Avatar Preview">
+                </div>
+                <div class="form-group">
+                    <label for="profile-nickname" data-i18n="profile_nickname_label">Seu Apelido</label>
+                    <input type="text" id="profile-nickname" placeholder="Ex: Cachorrão" maxlength="25" required>
+                </div>
+                <div class="form-group">
+                    <label for="profile-avatar-url" data-i18n="profile_avatar_label">URL da Foto de Perfil (Avatar)</label>
+                    <input type="url" id="profile-avatar-url" placeholder="https://site.com/foto.jpg" oninput="updateAvatarPreview(this.value)">
+                </div>
+                <div class="avatar-presets-group">
+                    <p class="presets-label" data-i18n="avatar_presets_label">Ou selecione um estilo retro:</p>
+                    <div class="presets-grid">
+                        <button class="preset-chip" onclick="selectAvatarPreset('Doomguy')">Doomguy</button>
+                        <button class="preset-chip" onclick="selectAvatarPreset('Mario')">Mario</button>
+                        <button class="preset-chip" onclick="selectAvatarPreset('Sonic')">Sonic</button>
+                        <button class="preset-chip" onclick="selectAvatarPreset('Link')">Link</button>
+                        <button class="preset-chip" onclick="selectAvatarPreset('Cachorrao')">Cachorrão</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProfileModal()" data-i18n="btn_cancel">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveProfile()" data-i18n="btn_save_profile">Salvar Perfil</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Criar Sala / Hospedar -->
+    <div class="modal-backdrop" id="create-room-modal" style="display: none;">
+        <div class="modal-box modal-large">
+            <div class="modal-header">
+                <h3 data-i18n="modal_create_title">Hospedar Nova Sala</h3>
+                <button class="btn-close" onclick="closeCreateRoomModal()">&times;</button>
+            </div>
+            <form id="create-room-form" onsubmit="submitCreateRoom(event)">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="room-title" data-i18n="label_room_title">Título da Sala</label>
+                            <input type="text" id="room-title" placeholder="Ex: CS 1.6 - FDS Nostalgia" required maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="room-game" data-i18n="label_game">Jogo Clássico</label>
+                            <select id="room-game" required>
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-conn-type">Rede / Modo de Jogo</label>
+                            <select id="room-conn-type" onchange="handleConnTypeChange()">
+                                <option value="direct_ip" selected>Direct IP (IP Público/VPN)</option>
+                                <option value="companion">Companion App (Túnel Automático)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-ip" id="room-ip-label" data-i18n="label_ip">Endereço IP (Host)</label>
+                            <input type="text" id="room-ip" placeholder="Ex: 201.55.12.87" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-port" data-i18n="label_port">Porta (Opcional)</label>
+                            <input type="text" id="room-port" placeholder="Ex: 27015">
+                        </div>
+                        <div class="form-group">
+                            <label for="room-max-players" data-i18n="label_max_players">Máximo de Jogadores</label>
+                            <input type="number" id="room-max-players" min="2" max="32" value="4" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="room-password" data-i18n="label_password">Senha da Sala (Opcional)</label>
+                            <input type="password" id="room-password" placeholder="Ex: 1234" maxlength="20">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="room-description" data-i18n="label_desc">Descrição / Detalhes de Conexão</label>
+                        <textarea id="room-description" placeholder="Ex: Versão 1.6 limpa, com sXe inativo. Usaremos o mapa de_dust2." rows="3" maxlength="200"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateRoomModal()" data-i18n="btn_cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="btn_create">Criar Sala</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Senha da Sala -->
+    <div class="modal-backdrop" id="password-modal" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-lock" style="color: var(--accent-pink); margin-right: 8px;"></i> <span id="pwd-modal-title">Sala Protegida</span></h3>
+                <button class="btn-close" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 1.2rem; font-size: 0.9rem;" id="pwd-modal-desc">Esta sala requer uma senha para entrar.</p>
+                <div class="form-group">
+                    <label for="room-password-input"><i class="fa-solid fa-key" style="color: var(--accent-cyan);"></i> Senha da Sala</label>
+                    <input type="password" id="room-password-input" placeholder="Digite a senha da sala..." autocomplete="off">
+                </div>
+                <p id="pwd-error-msg" style="color: var(--accent-pink); font-size: 0.85rem; display: none; margin-top: 0.5rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <span id="pwd-error-text">Senha incorreta!</span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePasswordModal()">Cancelar</button>
+                <button class="btn btn-primary" id="pwd-confirm-btn" onclick="confirmPasswordAndJoin()">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Políticas de Privacidade (LGPD) -->
+    <div class="modal-backdrop" id="privacy-modal" style="display: none;">
+        <div class="modal-box modal-large">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan); margin-right: 8px;"></i> <span data-i18n="modal_privacy_title">Políticas de Privacidade (LGPD)</span></h3>
+                <button class="btn-close" onclick="closePrivacyModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: left; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
+                <div>
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" data-i18n="privacy_sec1_title">1. Coleta de Dados</h4>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);" data-i18n="privacy_sec1_text">
+                        O Arena Games coleta apenas as informações necessárias para possibilitar o matchmaking de jogos retrô em tempo real. Isso inclui seu apelido (nickname) e a imagem de perfil (avatar) que você escolher ao se cadastrar ou editar seu perfil.
+                    </p>
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" data-i18n="privacy_sec2_title">2. Cookies e Armazenamento Local</h4>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);" data-i18n="privacy_sec2_text">
+                        Utilizamos o armazenamento local do navegador (localStorage) para salvar suas preferências, como idioma e controle de áudio, além da sua sessão ativa de login. Também podem ser exibidos anúncios de terceiros que utilizam cookies para otimização de campanhas publicitárias.
+                    </p>
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" data-i18n="privacy_sec3_title">3. Seus Direitos (LGPD)</h4>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);" data-i18n="privacy_sec3_text">
+                        Em conformidade com a Lei Geral de Proteção de Dados (LGPD), você tem total controle sobre seus dados. Você pode alterar seu apelido e avatar a qualquer momento na seção de perfil ou excluir as informações limpando os dados de navegação.
+                    </p>
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;" data-i18n="privacy_sec4_title">4. Segurança</h4>
+                    <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);" data-i18n="privacy_sec4_text">
+                        As senhas das salas criadas são processadas com verificação server-side de segurança (RPC) no banco de dados e nunca são expostas aos demais usuários.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closePrivacyModal()" data-i18n="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-consent" class="cookie-banner" style="display: none;">
+        <div class="cookie-content">
+            <i class="fa-solid fa-cookie-bite cookie-icon"></i>
+            <p>
+                <span data-i18n="cookie_text">Nós usamos cookies e armazenamento local para melhorar sua experiência retrô no Arena Games, alinhado com a LGPD.</span>
+                <a href="#" onclick="openPrivacyModal(event)" data-i18n="cookie_link" class="cookie-link">saber mais</a>.
+            </p>
+        </div>
+        <button onclick="acceptCookies()" class="btn btn-primary btn-cookie" data-i18n="cookie_btn_accept">Aceitar</button>
+    </div>
+
+    <!-- JS Principal com Cache Buster -->
+    <script src="app.js?v=21"></script>
+</body>
+</html>

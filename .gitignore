@@ -1,0 +1,5 @@
+.vercel
+node_modules/
+companion/sea-prep.blob
+companion/package-lock.json
+relay/package-lock.json
