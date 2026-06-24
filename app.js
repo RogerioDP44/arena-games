@@ -5,27 +5,27 @@
 // Lista de Jogos Clássicos Suportados (todos com suporte a Direct IP / servidor dedicado)
 const GAMES_LIST = [
     // ── FPS & Ação ──────────────────────────────────────────────────────
-    { id: 'cs16',      name: 'Counter-Strike 1.6',          icon: 'fa-crosshairs',   color: 'linear-gradient(135deg, #4b5320, #13170a)', protocol: 'udp' },
-    { id: 'quake3',    name: 'Quake III Arena',              icon: 'fa-bolt',         color: 'linear-gradient(135deg, #c71585, #3a0022)', protocol: 'udp' },
-    { id: 'doom',      name: 'Doom (1993)',                  icon: 'fa-fire',         color: 'linear-gradient(135deg, #1e5c1e, #071707)', protocol: 'udp' },
-    { id: 'halflife',  name: 'Half-Life / Deathmatch',       icon: 'fa-flask',        color: 'linear-gradient(135deg, #c27c0a, #1a0f00)', protocol: 'udp' },
-    { id: 'ut2004',    name: 'Unreal Tournament 2004',       icon: 'fa-bullseye',     color: 'linear-gradient(135deg, #b34700, #2d0000)', protocol: 'udp' },
-    { id: 'bf1942',    name: 'Battlefield 1942',             icon: 'fa-explosion',    color: 'linear-gradient(135deg, #5a4a00, #1a1000)', protocol: 'udp' },
-    { id: 'mohaa',     name: 'Medal of Honor: Allied Assault', icon: 'fa-medal',      color: 'linear-gradient(135deg, #4a3800, #0d0900)', protocol: 'udp' },
+    { id: 'cs16',      name: 'Counter-Strike 1.6',          icon: 'fa-crosshairs',   color: 'linear-gradient(135deg, #4b5320, #13170a)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'quake3',    name: 'Quake III Arena',              icon: 'fa-bolt',         color: 'linear-gradient(135deg, #c71585, #3a0022)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'doom',      name: 'Doom (1993)',                  icon: 'fa-fire',         color: 'linear-gradient(135deg, #1e5c1e, #071707)', protocol: 'udp', supportsCustomPort: false },
+    { id: 'halflife',  name: 'Half-Life / Deathmatch',       icon: 'fa-flask',        color: 'linear-gradient(135deg, #c27c0a, #1a0f00)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'ut2004',    name: 'Unreal Tournament 2004',       icon: 'fa-bullseye',     color: 'linear-gradient(135deg, #b34700, #2d0000)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'bf1942',    name: 'Battlefield 1942',             icon: 'fa-explosion',    color: 'linear-gradient(135deg, #5a4a00, #1a1000)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'mohaa',     name: 'Medal of Honor: Allied Assault', icon: 'fa-medal',      color: 'linear-gradient(135deg, #4a3800, #0d0900)', protocol: 'udp', supportsCustomPort: true },
     // ── RTS ─────────────────────────────────────────────────────────────
-    { id: 'aoe2',      name: 'Age of Empires II',            icon: 'fa-shield-halved',color: 'linear-gradient(135deg, #b8860b, #3b0066)', protocol: 'udp' },
-    { id: 'starcraft', name: 'StarCraft: Brood War',         icon: 'fa-rocket',       color: 'linear-gradient(135deg, #0b457c, #001f3f)', protocol: 'udp' },
-    { id: 'warcraft3', name: 'Warcraft III: Frozen Throne',  icon: 'fa-dragon',       color: 'linear-gradient(135deg, #0a3d8f, #001040)', protocol: 'tcp' },
+    { id: 'aoe2',      name: 'Age of Empires II',            icon: 'fa-shield-halved',color: 'linear-gradient(135deg, #b8860b, #3b0066)', protocol: 'udp', supportsCustomPort: false },
+    { id: 'starcraft', name: 'StarCraft: Brood War',         icon: 'fa-rocket',       color: 'linear-gradient(135deg, #0b457c, #001f3f)', protocol: 'udp', supportsCustomPort: false },
+    { id: 'warcraft3', name: 'Warcraft III: Frozen Throne',  icon: 'fa-dragon',       color: 'linear-gradient(135deg, #0a3d8f, #001040)', protocol: 'tcp', supportsCustomPort: false },
     // ── RPG & Aventura ───────────────────────────────────────────────────
-    { id: 'diablo2',   name: 'Diablo II',                    icon: 'fa-skull',        color: 'linear-gradient(135deg, #8b0000, #110000)', protocol: 'tcp' },
-    { id: 'homm3',     name: 'Heroes of Might & Magic III',  icon: 'fa-chess-knight', color: 'linear-gradient(135deg, #8b6914, #1a0f00)', protocol: 'tcp' },
+    { id: 'diablo2',   name: 'Diablo II',                    icon: 'fa-skull',        color: 'linear-gradient(135deg, #8b0000, #110000)', protocol: 'tcp', supportsCustomPort: false },
+    { id: 'homm3',     name: 'Heroes of Might & Magic III',  icon: 'fa-chess-knight', color: 'linear-gradient(135deg, #8b6914, #1a0f00)', protocol: 'tcp', supportsCustomPort: false },
     // ── Sandbox & Mundo Aberto ───────────────────────────────────────────
-    { id: 'terraria',  name: 'Terraria',                     icon: 'fa-tree',         color: 'linear-gradient(135deg, #2d7a2d, #1a4a0a)', protocol: 'tcp' },
-    { id: 'minecraft', name: 'Minecraft Java Edition',       icon: 'fa-cube',         color: 'linear-gradient(135deg, #5a8a1a, #2d3a00)', protocol: 'tcp' },
+    { id: 'terraria',  name: 'Terraria',                     icon: 'fa-tree',         color: 'linear-gradient(135deg, #2d7a2d, #1a4a0a)', protocol: 'tcp', supportsCustomPort: true },
+    { id: 'minecraft', name: 'Minecraft Java Edition',       icon: 'fa-cube',         color: 'linear-gradient(135deg, #5a8a1a, #2d3a00)', protocol: 'tcp', supportsCustomPort: true },
     // ── Outros ──────────────────────────────────────────────────────────
-    { id: 'worms',     name: 'Worms Armageddon',             icon: 'fa-worm',         color: 'linear-gradient(135deg, #4a7c00, #1a0066)', protocol: 'tcp' },
-    { id: 'samp',      name: 'GTA: SA-MP',                   icon: 'fa-car',          color: 'linear-gradient(135deg, #7b1fa2, #00b0ff)', protocol: 'udp' },
-    { id: 'custom',    name: 'Outro / Custom',               icon: 'fa-puzzle-piece', color: 'linear-gradient(135deg, #374151, #1f2937)', protocol: 'udp' }
+    { id: 'worms',     name: 'Worms Armageddon',             icon: 'fa-worm',         color: 'linear-gradient(135deg, #4a7c00, #1a0066)', protocol: 'tcp', supportsCustomPort: false },
+    { id: 'samp',      name: 'GTA: SA-MP',                   icon: 'fa-car',          color: 'linear-gradient(135deg, #7b1fa2, #00b0ff)', protocol: 'udp', supportsCustomPort: true },
+    { id: 'custom',    name: 'Outro / Custom',               icon: 'fa-puzzle-piece', color: 'linear-gradient(135deg, #374151, #1f2937)', protocol: 'udp', supportsCustomPort: true }
 ];
 
 // Sintetizador de Áudio 8-Bit (Arcade Sound Effects) via Web Audio API
@@ -1835,8 +1835,12 @@ function renderConnectionBox(lobby) {
     const container = document.getElementById('connection-box-container');
     if (!container) return;
 
+    const gameObj = GAMES_LIST.find(g => g.id === lobby.game);
+    const supportsPort = gameObj ? gameObj.supportsCustomPort !== false : true;
+
     if (lobby.connection_type !== 'companion') {
         // Modo Direct IP tradicional
+        const displayIp = (lobby.port && supportsPort) ? `${lobby.ip_address}:${lobby.port}` : lobby.ip_address;
         container.innerHTML = `
             <div class="connection-box">
                 <div class="connection-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
@@ -1846,7 +1850,7 @@ function renderConnectionBox(lobby) {
                 <div class="ip-display-container" style="display:flex; gap:10px; margin-bottom:0.8rem;">
                     <div class="ip-address-wrap" style="flex-grow:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); padding:0.6rem 1rem; border-radius:4px; font-family:var(--font-arcade); font-size:1rem; color:var(--accent-cyan); display:flex; align-items:center; gap:8px;">
                         <i class="fa-solid fa-network-wired"></i>
-                        <span id="lobby-detail-ip">${lobby.port ? `${lobby.ip_address}:${lobby.port}` : lobby.ip_address}</span>
+                        <span id="lobby-detail-ip">${displayIp}</span>
                     </div>
                     <button class="btn btn-secondary btn-copy" onclick="copyIpAddress()" style="display:flex; align-items:center; gap:6px; padding:0.6rem 1.2rem;">
                         <i class="fa-solid fa-copy"></i> <span id="copy-btn-text">${getTranslation('btn_copy')}</span>
@@ -1899,7 +1903,7 @@ function renderConnectionBox(lobby) {
                         </button>
                     `}
                 </div>
-
+ 
                 <div class="companion-instruction-step ${!isTunnelActive ? 'active' : ''}">
                     <span class="step-number">1</span>
                     <div>
@@ -1907,14 +1911,14 @@ function renderConnectionBox(lobby) {
                         <p style="font-size:0.8rem; line-height:1.4;">Clique no botão acima para abrir a ponte de rede e conectar com os outros jogadores.</p>
                     </div>
                 </div>
-
+ 
                 <div class="companion-instruction-step ${isTunnelActive ? 'active' : ''}">
                     <span class="step-number">2</span>
                     <div>
                         <strong>Conecte-se no seu Jogo</strong>
                         <p style="font-size:0.8rem; line-height:1.4;">Com o jogo aberto, escolha a opção Direct IP (ou Multiplayer LAN) e digite o endereço local:</p>
                         <div class="companion-ip-display" style="margin-top: 8px;">
-                            <span id="lobby-detail-ip">127.0.0.1:${lobby.port || '27015'}</span>
+                            <span id="lobby-detail-ip">${(lobby.port && supportsPort) ? `127.0.0.1:${lobby.port}` : '127.0.0.1'}</span>
                             <button class="btn btn-secondary btn-sm" onclick="copyIpAddress()" style="padding: 4px 10px; font-size: 0.75rem; display:inline-flex; align-items:center; gap:4px;">
                                 <i class="fa-solid fa-copy"></i> <span id="copy-btn-text">Copiar</span>
                             </button>
@@ -1923,7 +1927,7 @@ function renderConnectionBox(lobby) {
                 </div>
             `;
         }
-
+ 
         container.innerHTML = `
             <div class="companion-panel ${companionConnected ? 'online' : ''}">
                 <div class="companion-panel-header">

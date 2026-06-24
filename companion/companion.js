@@ -241,7 +241,7 @@ function startDualTunnelGuest(siteWs, lobbyId, gamePort, clientId, relayUrl) {
     activeTunnel = { cleanup };
 
     // 1. Iniciar Servidor UDP Local
-    localUdpServer = dgram.createSocket('udp4');
+    localUdpServer = dgram.createSocket({ type: 'udp4', reuseAddr: true });
     try {
         localUdpServer.bind(gamePort, '127.0.0.1', () => {
             console.log(`[Companion/Guest] Ouvindo pacotes locais na porta UDP ${gamePort}`);
@@ -267,6 +267,10 @@ function startDualTunnelGuest(siteWs, lobbyId, gamePort, clientId, relayUrl) {
 
     localUdpServer.on('error', (err) => {
         console.error('[Companion/Guest] Erro no socket local UDP:', err.message);
+        try {
+            siteWs.send(JSON.stringify({ type: 'error', message: `Falha no socket UDP local na porta ${gamePort}: ${err.message}` }));
+        } catch (e) {}
+        cleanup();
     });
 
     // 2. Iniciar Servidor TCP Local
