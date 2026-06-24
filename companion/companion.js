@@ -26,10 +26,10 @@ function startLocalWss() {
 
                 if (command.action === 'host') {
                     stopActiveTunnel();
-                    startHostTunnel(ws, command.lobbyId, command.gamePort, command.protocol || 'udp', command.relayUrl || DEFAULT_RELAY_URL);
+                    startDualTunnelHost(ws, command.lobbyId, command.gamePort, command.relayUrl || DEFAULT_RELAY_URL);
                 } else if (command.action === 'join') {
                     stopActiveTunnel();
-                    startGuestTunnel(ws, command.lobbyId, command.gamePort, command.clientId, command.protocol || 'udp', command.relayUrl || DEFAULT_RELAY_URL);
+                    startDualTunnelGuest(ws, command.lobbyId, command.gamePort, command.clientId, command.relayUrl || DEFAULT_RELAY_URL);
                 } else if (command.action === 'stop') {
                     stopActiveTunnel();
                     ws.send(JSON.stringify({ type: 'status', status: 'ready', tunnelActive: false }));
@@ -56,20 +56,30 @@ function stopActiveTunnel() {
     }
 }
 
-// --- MODO HOST (HOSPEDADOR DA SALA) ---
-function startHostTunnel(siteWs, lobbyId, gamePort, protocol, relayUrl) {
-    console.log(`[Companion] Iniciando túnel Host para lobby ${lobbyId} na porta ${gamePort} [Protocolo: ${protocol.toUpperCase()}]`);
+// --- DUAL TUNNEL HOST (HOSPEDADOR DA SALA: SUPORTA TCP E UDP SIMULTANEAMENTE) ---
+function startDualTunnelHost(siteWs, lobbyId, gamePort, relayUrl) {
+    console.log(`[Companion/Host] Iniciando túnel DUAL (TCP/UDP) para lobby ${lobbyId} na porta ${gamePort}`);
 
     const relayWs = new WebSocket(relayUrl);
-    const guests = new Map(); // clientId => { socket } (UDP ou TCP)
+    const udpGuests = new Map(); // clientId => { socket }
+    const tcpGuests = new Map(); // clientId => { socket }
 
     const cleanup = () => {
         try { relayWs.close(); } catch (e) {}
-        for (const [clientId, info] of guests.entries()) {
-            try { info.socket.destroy ? info.socket.destroy() : info.socket.close(); } catch (e) {}
+        
+        // Limpar sockets UDP
+        for (const [clientId, info] of udpGuests.entries()) {
+            try { info.socket.close(); } catch (e) {}
         }
-        guests.clear();
-        console.log('[Companion] Recursos do Host liberados.');
+        udpGuests.clear();
+
+        // Limpar sockets TCP
+        for (const [clientId, info] of tcpGuests.entries()) {
+            try { info.socket.destroy(); } catch (e) {}
+        }
+        tcpGuests.clear();
+        
+        console.log('[Companion/Host] Recursos do Host liberados.');
     };
 
     activeTunnel = { cleanup };
@@ -86,91 +96,92 @@ function startHostTunnel(siteWs, lobbyId, gamePort, protocol, relayUrl) {
             try {
                 const data = JSON.parse(message.toString());
                 
-                // Tratar eventos de controle TCP
-                if (protocol === 'tcp') {
-                    if (data.type === 'tcp_connect') {
-                        // O Guest iniciou uma conexão TCP. Nós criamos uma conexão local correspondente com o jogo do host.
-                        console.log(`[Companion/Host] Guest ${data.clientId} abrindo conexão TCP com o jogo...`);
-                        
-                        const tcpSocket = new net.Socket();
-                        
-                        tcpSocket.connect(gamePort, '127.0.0.1', () => {
-                            console.log(`[Companion/Host] Conexão TCP estabelecida com o jogo local na porta ${gamePort} para ${data.clientId}`);
-                        });
+                if (data.type === 'tcp_connect') {
+                    // Um Guest abriu uma conexão TCP. Conectamos no jogo local.
+                    console.log(`[Companion/Host] Guest ${data.clientId} solicitou conexão TCP com o jogo...`);
+                    
+                    const tcpSocket = new net.Socket();
+                    tcpSocket.connect(gamePort, '127.0.0.1', () => {
+                        console.log(`[Companion/Host] Conexão TCP estabelecida com o jogo local na porta ${gamePort} para ${data.clientId}`);
+                    });
 
-                        tcpSocket.on('data', (msg) => {
-                            // Resposta TCP do jogo -> envia ao Relay com o prefixo do clientId
-                            if (relayWs.readyState === WebSocket.OPEN) {
-                                const idBuffer = Buffer.from(data.clientId);
-                                const combined = Buffer.alloc(1 + idBuffer.length + msg.length);
-                                combined.writeUInt8(idBuffer.length, 0);
-                                idBuffer.copy(combined, 1);
-                                msg.copy(combined, 1 + idBuffer.length);
-                                
-                                relayWs.send(combined, { binary: true });
-                            }
-                        });
-
-                        tcpSocket.on('close', () => {
-                            console.log(`[Companion/Host] Conexão TCP com o jogo fechada pelo Guest ${data.clientId}`);
-                            relayWs.send(JSON.stringify({ type: 'tcp_close', clientId: data.clientId }));
-                            guests.delete(data.clientId);
-                        });
-
-                        tcpSocket.on('error', (err) => {
-                            console.error(`[Companion/Host] Erro no socket TCP do Guest ${data.clientId}:`, err.message);
-                        });
-
-                        guests.set(data.clientId, { socket: tcpSocket });
-                    } else if (data.type === 'tcp_close') {
-                        const guestInfo = guests.get(data.clientId);
-                        if (guestInfo) {
-                            guestInfo.socket.destroy();
-                            guests.delete(data.clientId);
+                    tcpSocket.on('data', (msg) => {
+                        if (relayWs.readyState === WebSocket.OPEN) {
+                            const idBuffer = Buffer.from(data.clientId);
+                            // Formato: [idLength (1B)] + [clientId] + [protocol (1B: 1=TCP)] + [payload]
+                            const combined = Buffer.alloc(1 + idBuffer.length + 1 + msg.length);
+                            combined.writeUInt8(idBuffer.length, 0);
+                            idBuffer.copy(combined, 1);
+                            combined.writeUInt8(1, 1 + idBuffer.length); // 1 = TCP
+                            msg.copy(combined, 1 + idBuffer.length + 1);
+                            
+                            relayWs.send(combined, { binary: true });
                         }
-                    }
-                }
+                    });
 
-                if (data.type === 'guest_left') {
-                    const guestInfo = guests.get(data.clientId);
+                    tcpSocket.on('close', () => {
+                        console.log(`[Companion/Host] Conexão TCP com o jogo fechada pelo Guest ${data.clientId}`);
+                        relayWs.send(JSON.stringify({ type: 'tcp_close', clientId: data.clientId }));
+                        tcpGuests.delete(data.clientId);
+                    });
+
+                    tcpSocket.on('error', (err) => {
+                        console.error(`[Companion/Host] Erro no socket TCP do Guest ${data.clientId}:`, err.message);
+                    });
+
+                    tcpGuests.set(data.clientId, { socket: tcpSocket });
+                } else if (data.type === 'tcp_close') {
+                    const guestInfo = tcpGuests.get(data.clientId);
                     if (guestInfo) {
-                        if (protocol === 'udp') {
-                            guestInfo.socket.close();
-                        } else {
-                            guestInfo.socket.destroy();
-                        }
-                        guests.delete(data.clientId);
-                        console.log(`[Companion/Host] Guest ${data.clientId} saiu. Conexão fechada.`);
+                        guestInfo.socket.destroy();
+                        tcpGuests.delete(data.clientId);
                     }
+                } else if (data.type === 'guest_left') {
+                    // Cleanup UDP
+                    const udpInfo = udpGuests.get(data.clientId);
+                    if (udpInfo) {
+                        udpInfo.socket.close();
+                        udpGuests.delete(data.clientId);
+                    }
+                    // Cleanup TCP
+                    const tcpInfo = tcpGuests.get(data.clientId);
+                    if (tcpInfo) {
+                        tcpInfo.socket.destroy();
+                        tcpGuests.delete(data.clientId);
+                    }
+                    console.log(`[Companion/Host] Guest ${data.clientId} saiu. Conexões limpas.`);
                 }
             } catch (e) {
-                console.error('[Companion/Host] Erro ao tratar mensagem de controle:', e);
+                console.error('[Companion/Host] Erro ao processar mensagem de controle:', e);
             }
             return;
         }
 
         // Dados binários recebidos do Relay
-        if (message.length < 2) return;
+        // Formato esperado de entrada do Relay (já concatenado com o ID pelo servidor):
+        // [idLength (1B)] + [clientId] + [protocol (1B: 0=UDP, 1=TCP)] + [payload]
+        if (message.length < 3) return;
         const idLength = message.readUInt8(0);
-        if (message.length < 1 + idLength) return;
+        if (message.length < 1 + idLength + 1) return;
 
         const clientId = message.toString('utf8', 1, 1 + idLength);
-        const payload = message.subarray(1 + idLength);
+        const protocol = message.readUInt8(1 + idLength);
+        const payload = message.subarray(1 + idLength + 1);
 
-        let guestInfo = guests.get(clientId);
-
-        if (protocol === 'udp') {
+        if (protocol === 0) {
             // --- PROXY UDP ---
+            let guestInfo = udpGuests.get(clientId);
             if (!guestInfo) {
                 const udpSocket = dgram.createSocket('udp4');
                 
                 udpSocket.on('message', (msg) => {
                     if (relayWs.readyState === WebSocket.OPEN) {
                         const idBuffer = Buffer.from(clientId);
-                        const combined = Buffer.alloc(1 + idBuffer.length + msg.length);
+                        const combined = Buffer.alloc(1 + idBuffer.length + 1 + msg.length);
                         combined.writeUInt8(idBuffer.length, 0);
                         idBuffer.copy(combined, 1);
-                        msg.copy(combined, 1 + idBuffer.length);
+                        combined.writeUInt8(0, 1 + idBuffer.length); // 0 = UDP
+                        msg.copy(combined, 1 + idBuffer.length + 1);
                         
                         relayWs.send(combined, { binary: true });
                     }
@@ -181,15 +192,16 @@ function startHostTunnel(siteWs, lobbyId, gamePort, protocol, relayUrl) {
                 });
 
                 guestInfo = { socket: udpSocket };
-                guests.set(clientId, guestInfo);
+                udpGuests.set(clientId, guestInfo);
                 console.log(`[Companion/Host] Novo socket UDP criado para o Guest ${clientId}`);
             }
 
             guestInfo.socket.send(payload, gamePort, '127.0.0.1', (err) => {
-                if (err) console.error(`[Companion/Host] Erro ao enviar pacote para o jogo local:`, err);
+                if (err) console.error(`[Companion/Host] Erro ao enviar pacote UDP para o jogo local:`, err);
             });
-        } else {
+        } else if (protocol === 1) {
             // --- PROXY TCP ---
+            const guestInfo = tcpGuests.get(clientId);
             if (guestInfo) {
                 guestInfo.socket.write(payload);
             }
@@ -208,97 +220,99 @@ function startHostTunnel(siteWs, lobbyId, gamePort, protocol, relayUrl) {
     });
 }
 
-// --- MODO GUEST (CONVIDADO DA SALA) ---
-function startGuestTunnel(siteWs, lobbyId, gamePort, clientId, protocol, relayUrl) {
-    console.log(`[Companion] Iniciando túnel Guest para lobby ${lobbyId} na porta ${gamePort}. ID: ${clientId} [Protocolo: ${protocol.toUpperCase()}]`);
+// --- DUAL TUNNEL GUEST (CONVIDADO DA SALA: SUPORTA TCP E UDP SIMULTANEAMENTE) ---
+function startDualTunnelGuest(siteWs, lobbyId, gamePort, clientId, relayUrl) {
+    console.log(`[Companion/Guest] Iniciando túnel DUAL (TCP/UDP) para lobby ${lobbyId} na porta ${gamePort}. ID: ${clientId}`);
 
     const relayWs = new WebSocket(relayUrl);
-    let localServer = null; // Servidor UDP ou TCP local
-    let lastClientAddr = null; // Apenas UDP (guarda endereço de retorno)
-    let tcpGuestSocket = null; // Apenas TCP (guarda conexão do jogo do guest)
+    let localUdpServer = null;
+    let localTcpServer = null;
+    let lastUdpClientAddr = null;
+    let activeTcpSocket = null;
 
     const cleanup = () => {
         try { relayWs.close(); } catch (e) {}
-        try { 
-            if (localServer) {
-                localServer.close ? localServer.close() : localServer.close(); 
-            }
-        } catch (e) {}
-        try { if (tcpGuestSocket) tcpGuestSocket.destroy(); } catch (e) {}
-        console.log('[Companion] Recursos do Guest liberados.');
+        try { if (localUdpServer) localUdpServer.close(); } catch (e) {}
+        try { if (localTcpServer) localTcpServer.close(); } catch (e) {}
+        try { if (activeTcpSocket) activeTcpSocket.destroy(); } catch (e) {}
+        console.log('[Companion/Guest] Recursos do Guest liberados.');
     };
 
     activeTunnel = { cleanup };
 
-    if (protocol === 'udp') {
-        // --- PROXY UDP ---
-        localServer = dgram.createSocket('udp4');
-        try {
-            localServer.bind(gamePort, '127.0.0.1', () => {
-                console.log(`[Companion/Guest] Ouvindo pacotes locais na porta UDP ${gamePort}`);
-            });
-        } catch (err) {
-            console.error(`[Companion/Guest] Não foi possível abrir a porta local UDP ${gamePort}:`, err);
-            siteWs.send(JSON.stringify({ type: 'error', message: `Porta UDP ${gamePort} já está em uso!` }));
-            cleanup();
-            return;
-        }
-
-        localServer.on('message', (msg, rinfo) => {
-            lastClientAddr = rinfo;
-            if (relayWs.readyState === WebSocket.OPEN) {
-                relayWs.send(msg, { binary: true });
-            }
+    // 1. Iniciar Servidor UDP Local
+    localUdpServer = dgram.createSocket('udp4');
+    try {
+        localUdpServer.bind(gamePort, '127.0.0.1', () => {
+            console.log(`[Companion/Guest] Ouvindo pacotes locais na porta UDP ${gamePort}`);
         });
-
-        localServer.on('error', (err) => {
-            console.error('[Companion/Guest] Erro no socket local UDP:', err);
-            siteWs.send(JSON.stringify({ type: 'tunnel_status', status: 'error', error: err.message }));
-        });
-    } else {
-        // --- PROXY TCP ---
-        // Cria um servidor TCP local na porta do jogo. Quando o jogo do Guest conectar nele, 
-        // nós abrimos o canal através do Relay.
-        localServer = net.createServer((socket) => {
-            console.log('[Companion/Guest] Jogo local abriu conexão TCP no túnel.');
-            tcpGuestSocket = socket;
-
-            // Avisa o host para ele abrir a conexão TCP correspondente com o jogo dele
-            if (relayWs.readyState === WebSocket.OPEN) {
-                relayWs.send(JSON.stringify({ type: 'tcp_connect' }));
-            }
-
-            socket.on('data', (data) => {
-                // Envia dados do jogo local para o Relay
-                if (relayWs.readyState === WebSocket.OPEN) {
-                    relayWs.send(data, { binary: true });
-                }
-            });
-
-            socket.on('close', () => {
-                console.log('[Companion/Guest] Conexão TCP com o jogo fechada localmente.');
-                if (relayWs.readyState === WebSocket.OPEN) {
-                    relayWs.send(JSON.stringify({ type: 'tcp_close' }));
-                }
-                tcpGuestSocket = null;
-            });
-
-            socket.on('error', (err) => {
-                console.error('[Companion/Guest] Erro na conexão TCP local:', err.message);
-            });
-        });
-
-        localServer.listen(gamePort, '127.0.0.1', () => {
-            console.log(`[Companion/Guest] Ouvindo conexões locais na porta TCP ${gamePort}`);
-        });
-
-        localServer.on('error', (err) => {
-            console.error(`[Companion/Guest] Erro ao abrir servidor TCP local na porta ${gamePort}:`, err.message);
-            siteWs.send(JSON.stringify({ type: 'error', message: `Porta TCP ${gamePort} já está em uso!` }));
-            cleanup();
-        });
+    } catch (err) {
+        console.error(`[Companion/Guest] Falha ao abrir porta UDP ${gamePort}:`, err.message);
+        siteWs.send(JSON.stringify({ type: 'error', message: `Porta UDP ${gamePort} em uso!` }));
+        cleanup();
+        return;
     }
 
+    localUdpServer.on('message', (msg, rinfo) => {
+        lastUdpClientAddr = rinfo;
+        if (relayWs.readyState === WebSocket.OPEN) {
+            // Formato enviado para o Relay (Guest->Host):
+            // [protocol (1B: 0=UDP)] + [payload]
+            const combined = Buffer.alloc(1 + msg.length);
+            combined.writeUInt8(0, 0); // 0 = UDP
+            msg.copy(combined, 1);
+            relayWs.send(combined, { binary: true });
+        }
+    });
+
+    localUdpServer.on('error', (err) => {
+        console.error('[Companion/Guest] Erro no socket local UDP:', err.message);
+    });
+
+    // 2. Iniciar Servidor TCP Local
+    localTcpServer = net.createServer((socket) => {
+        console.log('[Companion/Guest] Jogo local abriu conexão TCP no túnel.');
+        activeTcpSocket = socket;
+
+        if (relayWs.readyState === WebSocket.OPEN) {
+            relayWs.send(JSON.stringify({ type: 'tcp_connect' }));
+        }
+
+        socket.on('data', (data) => {
+            if (relayWs.readyState === WebSocket.OPEN) {
+                // Formato enviado para o Relay (Guest->Host):
+                // [protocol (1B: 1=TCP)] + [payload]
+                const combined = Buffer.alloc(1 + data.length);
+                combined.writeUInt8(1, 0); // 1 = TCP
+                data.copy(combined, 1);
+                relayWs.send(combined, { binary: true });
+            }
+        });
+
+        socket.on('close', () => {
+            console.log('[Companion/Guest] Conexão TCP com o jogo fechada localmente.');
+            if (relayWs.readyState === WebSocket.OPEN) {
+                relayWs.send(JSON.stringify({ type: 'tcp_close' }));
+            }
+            activeTcpSocket = null;
+        });
+
+        socket.on('error', (err) => {
+            console.error('[Companion/Guest] Erro na conexão TCP local:', err.message);
+        });
+    });
+
+    localTcpServer.listen(gamePort, '127.0.0.1', () => {
+        console.log(`[Companion/Guest] Ouvindo conexões locais na porta TCP ${gamePort}`);
+    });
+
+    localTcpServer.on('error', (err) => {
+        console.error(`[Companion/Guest] Falha ao abrir servidor TCP local na porta ${gamePort}:`, err.message);
+        siteWs.send(JSON.stringify({ type: 'error', message: `Porta TCP ${gamePort} em uso!` }));
+        cleanup();
+    });
+
+    // 3. Conexão com o Relay
     relayWs.on('open', () => {
         console.log('[Companion/Guest] Conectado ao servidor Relay.');
         relayWs.send(JSON.stringify({ type: 'init', role: 'guest', lobbyId, clientId }));
@@ -315,9 +329,9 @@ function startGuestTunnel(siteWs, lobbyId, gamePort, clientId, protocol, relayUr
                     siteWs.send(JSON.stringify({ type: 'tunnel_status', status: 'disconnected', reason: 'host_left' }));
                     stopActiveTunnel();
                 } else if (data.type === 'tcp_close') {
-                    if (tcpGuestSocket) {
-                        tcpGuestSocket.destroy();
-                        tcpGuestSocket = null;
+                    if (activeTcpSocket) {
+                        activeTcpSocket.destroy();
+                        activeTcpSocket = null;
                     }
                 }
             } catch (e) {}
@@ -325,15 +339,23 @@ function startGuestTunnel(siteWs, lobbyId, gamePort, clientId, protocol, relayUr
         }
 
         // Dados binários recebidos do Host -> repassa para o jogo local
-        if (protocol === 'udp') {
-            if (lastClientAddr) {
-                localServer.send(message, lastClientAddr.port, lastClientAddr.address, (err) => {
-                    if (err) console.error('[Companion/Guest] Erro ao enviar resposta para o jogo local:', err);
+        // Formato recebido do Relay (Host->Guest):
+        // [protocol (1B: 0=UDP, 1=TCP)] + [payload]
+        if (message.length < 2) return;
+        const protocol = message.readUInt8(0);
+        const payload = message.subarray(1);
+
+        if (protocol === 0) {
+            // Repassar via UDP
+            if (lastUdpClientAddr) {
+                localUdpServer.send(payload, lastUdpClientAddr.port, lastUdpClientAddr.address, (err) => {
+                    if (err) console.error('[Companion/Guest] Erro ao enviar resposta UDP para o jogo local:', err);
                 });
             }
-        } else {
-            if (tcpGuestSocket) {
-                tcpGuestSocket.write(message);
+        } else if (protocol === 1) {
+            // Repassar via TCP
+            if (activeTcpSocket) {
+                activeTcpSocket.write(payload);
             }
         }
     });
