@@ -42,6 +42,29 @@ wss.on('connection', (ws) => {
                             room.hostSocket.send(JSON.stringify({ type: 'guest_joined', clientId }));
                         }
                     }
+                } else {
+                    // Encaminhar mensagens de controle (ex: tcp_connect, tcp_close)
+                    if (!clientInfo) return;
+                    const { role, lobbyId, clientId } = clientInfo;
+                    const room = rooms.get(lobbyId);
+                    if (!room) return;
+
+                    if (role === 'guest') {
+                        // Repassa para o Host contendo o ID do Guest de origem
+                        if (room.hostSocket && room.hostSocket.readyState === ws.OPEN) {
+                            const forwardData = { ...data, clientId };
+                            room.hostSocket.send(JSON.stringify(forwardData));
+                        }
+                    } else if (role === 'host') {
+                        // Repassa para o Guest específico
+                        const targetClientId = data.clientId;
+                        if (targetClientId) {
+                            const guestWs = room.guests.get(targetClientId);
+                            if (guestWs && guestWs.readyState === ws.OPEN) {
+                                guestWs.send(JSON.stringify(data));
+                            }
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('[Relay] Erro ao processar mensagem de texto:', err);
