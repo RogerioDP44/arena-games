@@ -17,6 +17,7 @@ const GAMES_LIST = [
     { id: 'starcraft', name: 'StarCraft: Brood War',         icon: 'fa-rocket',       color: 'linear-gradient(135deg, #0b457c, #001f3f)', protocol: 'udp', supportsCustomPort: false },
     { id: 'warcraft3', name: 'Warcraft III: Frozen Throne',  icon: 'fa-dragon',       color: 'linear-gradient(135deg, #0a3d8f, #001040)', protocol: 'tcp', supportsCustomPort: false },
     // ── RPG & Aventura ───────────────────────────────────────────────────
+    { id: 'diablo1',   name: 'Diablo I / Hellfire',          icon: 'fa-dungeon',      color: 'linear-gradient(135deg, #4a0000, #0a0000)', protocol: 'tcp', supportsCustomPort: false },
     { id: 'diablo2',   name: 'Diablo II',                    icon: 'fa-skull',        color: 'linear-gradient(135deg, #8b0000, #110000)', protocol: 'tcp', supportsCustomPort: false },
     { id: 'homm3',     name: 'Heroes of Might & Magic III',  icon: 'fa-chess-knight', color: 'linear-gradient(135deg, #8b6914, #1a0f00)', protocol: 'tcp', supportsCustomPort: false },
     // ── Sandbox & Mundo Aberto ───────────────────────────────────────────
@@ -1979,7 +1980,7 @@ function handleGameSelectChange() {
         else if (gameId === 'bf1942') portInput.value = '14567';
         else if (gameId === 'mohaa') portInput.value = '12203';
         else if (gameId === 'aoe2') portInput.value = '2300';
-        else if (gameId === 'starcraft' || gameId === 'warcraft3' || gameId === 'diablo2' || gameId === 'homm3') portInput.value = '6112';
+        else if (gameId === 'starcraft' || gameId === 'warcraft3' || gameId === 'diablo2' || gameId === 'diablo1' || gameId === 'homm3') portInput.value = '6112';
         else if (gameId === 'minecraft') portInput.value = '25565';
         else if (gameId === 'worms') portInput.value = '17011';
         else portInput.value = ''; // Custom
