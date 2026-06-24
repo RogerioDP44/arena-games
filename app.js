@@ -278,6 +278,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGameFilters();
     populateGameSelect();
 
+    // Auto-preencher porta ao selecionar o jogo
+    const gameSelect = document.getElementById('room-game');
+    if (gameSelect) {
+        gameSelect.addEventListener('change', handleGameSelectChange);
+    }
+
     // 3. Configurar Event Listeners de Busca
     document.getElementById('search-input').addEventListener('input', (e) => {
         state.searchQuery = e.target.value.toLowerCase();
@@ -1002,6 +1008,9 @@ function openCreateRoomModal() {
         return;
     }
     document.getElementById('create-room-modal').style.display = 'flex';
+    
+    // Auto-preencher a porta padrão
+    handleGameSelectChange();
 }
 
 function closeCreateRoomModal() {
@@ -1953,4 +1962,22 @@ function confirmDownloadCompanion() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+function handleGameSelectChange() {
+    const gameId = document.getElementById('room-game').value;
+    const portInput = document.getElementById('room-port');
+    if (portInput) {
+        if (gameId === 'cs16' || gameId === 'halflife') portInput.value = '27015';
+        else if (gameId === 'quake3') portInput.value = '27960';
+        else if (gameId === 'doom') portInput.value = '10666';
+        else if (gameId === 'ut2004' || gameId === 'terraria' || gameId === 'samp') portInput.value = '7777';
+        else if (gameId === 'bf1942') portInput.value = '14567';
+        else if (gameId === 'mohaa') portInput.value = '12203';
+        else if (gameId === 'aoe2') portInput.value = '2300';
+        else if (gameId === 'starcraft' || gameId === 'warcraft3' || gameId === 'diablo2' || gameId === 'homm3') portInput.value = '6112';
+        else if (gameId === 'minecraft') portInput.value = '25565';
+        else if (gameId === 'worms') portInput.value = '17011';
+        else portInput.value = ''; // Custom
+    }
 }
