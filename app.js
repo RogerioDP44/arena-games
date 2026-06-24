@@ -1894,15 +1894,20 @@ function renderConnectionBox(lobby) {
                         ${isTunnelActive ? (isHost ? 'TÚNEL DE HOSPEDAGEM ATIVO' : 'TÚNEL DE CONEXÃO ATIVO') : 'COMPANION CONECTADO E PRONTO'}
                     </span>
                     
-                    ${!isTunnelActive ? `
-                        <button class="btn btn-primary" onclick="toggleCompanionTunnel(true)" style="padding: 0.6rem 1.5rem; display:inline-flex; align-items:center; gap:8px;">
-                            <i class="fa-solid fa-play"></i> ${isHost ? 'Iniciar Hospedagem' : 'Conectar à Sala'}
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; justify-content: center;">
+                        ${!isTunnelActive ? `
+                            <button class="btn btn-primary" onclick="toggleCompanionTunnel(true)" style="padding: 0.6rem 1.5rem; display:inline-flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-play"></i> ${isHost ? 'Iniciar Hospedagem' : 'Conectar à Sala'}
+                            </button>
+                        ` : `
+                            <button class="btn btn-danger" onclick="toggleCompanionTunnel(false)" style="background: var(--accent-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.4); padding: 0.6rem 1.5rem; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--accent-pink);">
+                                <i class="fa-solid fa-stop"></i> Parar Conexão
+                            </button>
+                        `}
+                        <button class="btn btn-secondary" onclick="openTutorialModal()" style="padding: 0.6rem 1.2rem; display:inline-flex; align-items:center; gap:8px; background: rgba(138,43,226,0.15); border: 1px solid var(--accent-purple);">
+                            <i class="fa-solid fa-circle-question" style="color:var(--accent-cyan);"></i> Como Conectar?
                         </button>
-                    ` : `
-                        <button class="btn btn-danger" onclick="toggleCompanionTunnel(false)" style="background: var(--accent-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.4); padding: 0.6rem 1.5rem; display:inline-flex; align-items:center; gap:8px; border: 1px solid var(--accent-pink);">
-                            <i class="fa-solid fa-stop"></i> Parar Conexão
-                        </button>
-                    `}
+                    </div>
                 </div>
  
                 <div class="companion-instruction-step ${!isTunnelActive ? 'active' : ''}">
@@ -1985,4 +1990,121 @@ function handleGameSelectChange() {
         else if (gameId === 'worms') portInput.value = '17011';
         else portInput.value = ''; // Custom
     }
+}
+
+function openTutorialModal() {
+    AudioSynth.playClick();
+    const modal = document.getElementById('tutorial-modal');
+    if (!modal || !state.currentLobby) return;
+
+    const lobby = state.currentLobby;
+    const gameObj = GAMES_LIST.find(g => g.id === lobby.game);
+    const gameName = gameObj ? gameObj.name : 'Outro / Custom';
+    const isHost = state.user.id === lobby.host_id;
+
+    let stepsHtml = '';
+
+    if (lobby.game === 'diablo1') {
+        stepsHtml = `
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                O <strong>Diablo I / Hellfire (DevilutionX)</strong> utiliza conexão TCP direta. Siga a ordem exata abaixo para evitar erros de conexão:
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(0, 245, 255, 0.1); ${isHost ? 'box-shadow: 0 0 10px rgba(0, 245, 255, 0.2); border-color: var(--accent-cyan);' : ''}">
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-crown"></i> 1. Passos do Hospedador (Host)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>No site, clique em <strong>"Iniciar Hospedagem"</strong> no painel de conexão. O status deve ficar verde.</li>
+                        <li><strong>Abra o jogo (DevilutionX)</strong> no seu PC.</li>
+                        <li>No menu principal, selecione <strong>Jogo Multijogador</strong>.</li>
+                        <li>Selecione <strong>Cliente-Servidor (TCP)</strong> e clique em <strong>Hospedar</strong>.</li>
+                        <li>Escolha seu personagem, selecione o jogo e clique em <strong>Criar Jogo</strong>. Aguarde os convidados no mapa da cidade.</li>
+                    </ol>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.1); ${!isHost ? 'box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); border-color: var(--accent-pink);' : ''}">
+                    <h4 style="color: var(--accent-pink); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user-plus"></i> 2. Passos do Convidado (Guest)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>Aguarde o Host criar o jogo acima.</li>
+                        <li>No site, clique em <strong>"Conectar à Sala"</strong>. O status deve ficar verde.</li>
+                        <li><strong>Abra o jogo (DevilutionX)</strong> no seu PC.</li>
+                        <li>No menu principal, selecione <strong>Jogo Multijogador</strong>.</li>
+                        <li>Selecione <strong>Cliente-Servidor (TCP)</strong> e clique em <strong>Entrar</strong>.</li>
+                        <li>Digite o endereço local <strong><code style="color: var(--accent-cyan);">127.0.0.1</code></strong> e clique em <strong>OK</strong>.</li>
+                    </ol>
+                </div>
+            </div>
+        `;
+    } else if (lobby.game === 'cs16' || lobby.game === 'halflife') {
+        stepsHtml = `
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                O <strong>Counter-Strike 1.6 / Half-Life</strong> utiliza conexão UDP direta. Siga o tutorial abaixo para se conectar:
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(0, 245, 255, 0.1); ${isHost ? 'box-shadow: 0 0 10px rgba(0, 245, 255, 0.2); border-color: var(--accent-cyan);' : ''}">
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-crown"></i> 1. Passos do Hospedador (Host)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>No site, clique em <strong>"Iniciar Hospedagem"</strong> no painel de conexão.</li>
+                        <li>Inicie o seu jogo ou servidor dedicado local do CS 1.6 na porta configurada (padrão: <strong>27015</strong>).</li>
+                        <li>O jogo deve estar rodando e aguardando conexões locais.</li>
+                    </ol>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.1); ${!isHost ? 'box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); border-color: var(--accent-pink);' : ''}">
+                    <h4 style="color: var(--accent-pink); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user-plus"></i> 2. Passos do Convidado (Guest)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>No site, clique em <strong>"Conectar à Sala"</strong>.</li>
+                        <li>Abra o seu jogo no PC.</li>
+                        <li>Abra o console do jogo (geralmente na tecla <strong>' (aspas)</strong> ou <strong>~ (til)</strong>).</li>
+                        <li>Digite o comando <strong><code style="color: var(--accent-cyan);">connect 127.0.0.1:${lobby.port || '27015'}</code></strong> e aperte Enter.</li>
+                        <li>Alternativamente, você pode procurar na aba de servidores <strong>"LAN"</strong> dentro do menu Find Servers.</li>
+                    </ol>
+                </div>
+            </div>
+        `;
+    } else {
+        // Genérico para outros jogos
+        const defaultPort = lobby.port || '6112';
+        stepsHtml = `
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                Guia de conexão padrão via Companion App para o jogo <strong>${gameName}</strong>:
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(0, 245, 255, 0.1); ${isHost ? 'box-shadow: 0 0 10px rgba(0, 245, 255, 0.2); border-color: var(--accent-cyan);' : ''}">
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-crown"></i> 1. Passos do Hospedador (Host)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>No site, clique em <strong>"Iniciar Hospedagem"</strong> no painel.</li>
+                        <li>Abra o jogo clássico e inicie a partida em modo <strong>Multiplayer LAN / Local Area Network (TCP/UDP)</strong> como Host.</li>
+                        <li>Certifique-se de que a porta de hospedagem do jogo é a mesma definida na sala (porta: <strong>${defaultPort}</strong>).</li>
+                    </ol>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 1.2rem; border-radius: 8px; border: 1px solid rgba(255, 0, 127, 0.1); ${!isHost ? 'box-shadow: 0 0 10px rgba(255, 0, 127, 0.2); border-color: var(--accent-pink);' : ''}">
+                    <h4 style="color: var(--accent-pink); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-user-plus"></i> 2. Passos do Convidado (Guest)
+                    </h4>
+                    <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>No site, clique em <strong>"Conectar à Sala"</strong>.</li>
+                        <li>Abra o jogo e vá na seção multijogador (LAN, TCP/IP ou Direct IP).</li>
+                        <li>Insira o endereço local <strong><code style="color: var(--accent-cyan);">127.0.0.1${gameObj && gameObj.supportsCustomPort === false ? '' : `:${defaultPort}`}</code></strong> no campo de IP para conectar.</li>
+                    </ol>
+                </div>
+            </div>
+        `;
+    }
+
+    document.getElementById('tutorial-modal-body').innerHTML = stepsHtml;
+    modal.style.display = 'flex';
+}
+
+function closeTutorialModal() {
+    AudioSynth.playClick();
+    const modal = document.getElementById('tutorial-modal');
+    if (modal) modal.style.display = 'none';
 }

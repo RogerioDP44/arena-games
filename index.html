@@ -518,6 +518,22 @@
         </div>
     </div>
 
+    <!-- Modal: Tutorial de Conexão do Jogo -->
+    <div class="modal-backdrop" id="tutorial-modal" style="display: none;">
+        <div class="modal-box modal-large">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-circle-question" style="color: var(--accent-cyan); margin-right: 8px;"></i> Guia Passo a Passo de Conexão</h3>
+                <button class="btn-close" onclick="closeTutorialModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="tutorial-modal-body" style="text-align: left; line-height: 1.6;">
+                <!-- Preenchido dinamicamente pelo JS baseado no jogo -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeTutorialModal()">Entendi, Voltar para a Sala</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Cookie Consent Banner -->
     <div id="cookie-consent" class="cookie-banner" style="display: none;">
         <div class="cookie-content">
