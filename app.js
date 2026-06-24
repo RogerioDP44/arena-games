@@ -1143,7 +1143,7 @@ async function joinLobby(lobbyId) {
 
     document.getElementById('lobby-detail-title').textContent = data.title;
     document.getElementById('lobby-detail-host').textContent = data.host_name;
-    document.getElementById('lobby-detail-desc').textContent = data.description || '';
+    document.getElementById('lobby-detail-desc').innerHTML = linkify(data.description || '');
     
     // O contador de jogadores será atualizado pelo sistema de presença (updatePlayersList)
     document.getElementById('lobby-players-count').textContent = `?/${data.max_players}`;
@@ -1187,7 +1187,7 @@ function subscribeToCurrentLobbyDb(lobbyId) {
 
             state.currentLobby = payload.new;
             document.getElementById('lobby-detail-title').textContent = payload.new.title;
-            document.getElementById('lobby-detail-desc').textContent = payload.new.description || '';
+            document.getElementById('lobby-detail-desc').innerHTML = linkify(payload.new.description || '');
             
             // Re-renderizar box de conexão
             renderConnectionBox(payload.new);
@@ -1449,6 +1449,18 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Auxiliar: Escapar HTML e linkar URLs
+function linkify(text) {
+    if (!text) return '';
+    const escaped = escapeHtml(text);
+    // Regex para encontrar URLs (http/https ou iniciando com www.)
+    const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/g;
+    return escaped.replace(urlRegex, function(url) {
+        const href = url.startsWith('http') ? url : 'http://' + url;
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-cyan); text-decoration: underline; word-break: break-all;">${url}</a>`;
+    });
 }
 
 // Exibir Notificação Customizada (Premium Toast)
