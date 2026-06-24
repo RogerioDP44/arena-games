@@ -1769,7 +1769,7 @@ function toggleCompanionTunnel(active) {
 
     if (active) {
         const isHost = state.user.id === state.currentLobby.host_id;
-        const relayUrl = 'wss://arena-relay.sismatic.com.br'; // Servidor relay de produção
+        const relayUrl = 'wss://arena-relay-43d6.onrender.com'; // Servidor relay de produção
 
         if (isHost) {
             sendCompanionCommand({
