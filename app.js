@@ -1330,8 +1330,10 @@ async function leaveCurrentLobby() {
 
     AudioSynth.playClick();
 
-    // Parar túnel se estiver ativo ao sair
-    if (state.companionStatus === 'connected' && state.companionTunnelActive) {
+    // Parar túnel se estiver ativo ao sair (apenas para não-hosts, pois hosts mantêm o servidor rodando)
+    const isHost = state.user && state.currentLobby && state.user.id === state.currentLobby.host_id;
+    console.log('[Companion/Web] leaveCurrentLobby - isHost:', isHost, 'userID:', state.user?.id, 'hostID:', state.currentLobby?.host_id);
+    if (!isHost && state.companionStatus === 'connected' && state.companionTunnelActive) {
         toggleCompanionTunnel(false);
     }
 
@@ -1555,6 +1557,11 @@ async function closeCurrentLobby() {
 
     AudioSynth.playLaser();
     const lobbyId = state.currentLobby.id;
+
+    // Parar o túnel do Companion se estiver ativo ao encerrar a sala
+    if (state.companionStatus === 'connected' && state.companionTunnelActive) {
+        toggleCompanionTunnel(false);
+    }
 
     if (state.lobbyPresenceChannel) {
         state.supabase.removeChannel(state.lobbyPresenceChannel);
